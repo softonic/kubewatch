@@ -1,0 +1,10 @@
+{
+    "dependencies": {
+        "k8s.io/apimachinery": {
+            "branch": "master"
+        },
+        "k8s.io/client-go": {
+            "version": "^2.0.0"
+        }
+    }
+}

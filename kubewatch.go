@@ -1,12 +1,15 @@
 package main
 
 import (
+
+	// Stdlib:
 	"flag"
 	"fmt"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	// Kubernetes:
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -29,7 +32,7 @@ func main() {
 
 	for {
 
-		pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
+		pods, err := clientset.CoreV1().Pods("").List(v1.ListOptions{})
 		if err != nil {
 			panic(err.Error())
 		}
