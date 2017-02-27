@@ -21,7 +21,7 @@ func main() {
 	// Handle flags:
 	kubeconfig := flag.String("kubeconfig", "./config", "Absolute path to the kubeconfig file.")
 	resource := flag.String("resource", "services", "Set the resource type to be watched.")
-	namespace := flag.String("namespace", "default", "Set the namespace to be watched.")
+	namespace := flag.String("namespace", v1.NamespaceAll, "Set the namespace to be watched.")
 	flag.Parse()
 
 	// Map resource to runtime object:
@@ -48,6 +48,7 @@ func main() {
 		*resource, *namespace,
 		fields.Everything())
 
+	// Controller providing event notifications:
 	_, controller := cache.NewInformer(
 		watchlist,
 		m[*resource],
@@ -68,6 +69,7 @@ func main() {
 	stop := make(chan struct{})
 	go controller.Run(stop)
 
+	// Loop forever:
 	for {
 		time.Sleep(time.Second)
 	}
