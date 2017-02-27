@@ -1,5 +1,5 @@
 {
-    "memo": "cc99e51ece064c466ba372403b61bdf2c1ee42584bfe0bb9fc31da36363dd7b1",
+    "memo": "0d2edc10488c0a6a1594d30bab2fd703c1d6d3e77fe7c274990a5c45ac0e9614",
     "projects": [
         {
             "name": "cloud.google.com/go",
@@ -339,33 +339,6 @@
             ]
         },
         {
-            "name": "k8s.io/apimachinery",
-            "branch": "master",
-            "revision": "d90aa2c8531f13b0ca734845934c10dcb6a56ca7",
-            "packages": [
-                "pkg/api/resource",
-                "pkg/apis/meta/v1",
-                "pkg/conversion",
-                "pkg/conversion/queryparams",
-                "pkg/fields",
-                "pkg/labels",
-                "pkg/openapi",
-                "pkg/runtime",
-                "pkg/runtime/schema",
-                "pkg/selection",
-                "pkg/types",
-                "pkg/util/errors",
-                "pkg/util/intstr",
-                "pkg/util/net",
-                "pkg/util/runtime",
-                "pkg/util/sets",
-                "pkg/util/validation",
-                "pkg/util/wait",
-                "pkg/watch",
-                "third_party/forked/golang/reflect"
-            ]
-        },
-        {
             "name": "k8s.io/client-go",
             "version": "v2.0.0",
             "revision": "e121606b0d09b2e1c467183ee46217fa85a6b672",
@@ -447,6 +420,7 @@
                 "pkg/util",
                 "pkg/util/cert",
                 "pkg/util/clock",
+                "pkg/util/diff",
                 "pkg/util/errors",
                 "pkg/util/flowcontrol",
                 "pkg/util/framer",
@@ -474,6 +448,7 @@
                 "plugin/pkg/client/auth/oidc",
                 "rest",
                 "tools/auth",
+                "tools/cache",
                 "tools/clientcmd",
                 "tools/clientcmd/api",
                 "tools/clientcmd/api/latest",

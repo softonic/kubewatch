@@ -10,34 +10,56 @@ import (
 	// Kubernetes:
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/fields"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
 
+	// Handle flags:
 	kubeconfig := flag.String("kubeconfig", "./config", "absolute path to the kubeconfig file")
 	flag.Parse()
 
-	// uses the current context in kubeconfig
+	// Uses the current context in kubeconfig:
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	// creates the clientset
+	// Creates the clientset:
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
 	}
 
+	// Watch for services in the default namespace:
+	watchlist := cache.NewListWatchFromClient(
+		clientset.Core().RESTClient(),
+		"services", v1.NamespaceDefault,
+		fields.Everything())
+
+	_, controller := cache.NewInformer(
+		watchlist,
+		&v1.Service{},
+		time.Second*0,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				fmt.Printf("service added: %s \n", obj)
+			},
+			DeleteFunc: func(obj interface{}) {
+				fmt.Printf("service deleted: %s \n", obj)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				fmt.Printf("service changed \n")
+			},
+		},
+	)
+
+	stop := make(chan struct{})
+	go controller.Run(stop)
+
 	for {
-
-		pods, err := clientset.CoreV1().Pods("").List(v1.ListOptions{})
-		if err != nil {
-			panic(err.Error())
-		}
-
-		fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
-		time.Sleep(10 * time.Second)
+		time.Sleep(time.Second)
 	}
 }
