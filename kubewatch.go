@@ -3,6 +3,7 @@ package main
 import (
 
 	// Stdlib:
+	"encoding/json"
 	"flag"
 	"fmt"
 	"time"
@@ -57,13 +58,15 @@ func main() {
 		time.Second*0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				fmt.Printf("%s added: %s \n", *resource, obj)
+				jsn, _ := json.Marshal(obj)
+				fmt.Printf("%s added: %s\n", *resource, jsn)
 			},
 			DeleteFunc: func(obj interface{}) {
-				fmt.Printf("%s deleted: %s \n", *resource, obj)
+				jsn, _ := json.Marshal(obj)
+				fmt.Printf("%s deleted: %s\n", *resource, jsn)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				fmt.Printf("%s changed \n", *resource)
+				fmt.Printf("%s changed\n", *resource)
 			},
 		},
 	)
