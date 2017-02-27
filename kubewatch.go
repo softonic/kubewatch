@@ -26,8 +26,10 @@ func main() {
 
 	// Map resource to runtime object:
 	m := map[string]runtime.Object{
-		"pods":     &v1.Pod{},
-		"services": &v1.Service{},
+		"pods":       &v1.Pod{},
+		"configMaps": &v1.ConfigMap{},
+		"secrets":    &v1.Secret{},
+		"services":   &v1.Service{},
 	}
 
 	// Uses the current context in kubeconfig:
