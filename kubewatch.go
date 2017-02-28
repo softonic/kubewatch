@@ -32,7 +32,7 @@ import (
 var (
 
 	// Root level command:
-	app = kingpin.New("kubewatch", "Watches Kubernetes resources via its API")
+	app = kingpin.New("kubewatch", "Watches Kubernetes resources via its API.")
 
 	// Flags:
 	kubeconfig = app.Flag("kubeconfig",
