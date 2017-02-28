@@ -11,6 +11,7 @@ import (
 	// Kubernetes:
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
@@ -27,10 +28,28 @@ func main() {
 
 	// Map resource to runtime object:
 	m := map[string]runtime.Object{
-		"pods":       &v1.Pod{},
-		"configMaps": &v1.ConfigMap{},
-		"secrets":    &v1.Secret{},
-		"services":   &v1.Service{},
+
+		// v1:
+		"configMaps":             &v1.ConfigMap{},
+		"endpoints":              &v1.Endpoints{},
+		"events":                 &v1.Event{},
+		"limitranges":            &v1.LimitRange{},
+		"namespaces":             &v1.Namespace{},
+		"persistentvolumeclaims": &v1.PersistentVolumeClaim{},
+		"persistentvolumes":      &v1.PersistentVolume{},
+		"pods":                   &v1.Pod{},
+		"podtemplates":           &v1.PodTemplate{},
+		"replicationcontrollers": &v1.ReplicationController{},
+		"resourcequotas":         &v1.ResourceQuota{},
+		"secrets":                &v1.Secret{},
+		"serviceaccounts":        &v1.ServiceAccount{},
+		"services":               &v1.Service{},
+
+		// v1beta1:
+		"deployments":              &v1beta1.Deployment{},
+		"horizontalpodautoscalers": &v1beta1.HorizontalPodAutoscaler{},
+		"ingresses":                &v1beta1.Ingress{},
+		"jobs":                     &v1beta1.Job{},
 	}
 
 	// Uses the current context in kubeconfig:
