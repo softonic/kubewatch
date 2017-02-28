@@ -148,9 +148,6 @@ func main() {
 		panic(err.Error())
 	}
 
-	fmt.Println(listNamespaces())
-	os.Exit(0)
-
 	// Watch for resource in namespace:
 	watchlist := cache.NewListWatchFromClient(
 		clientset.Core().RESTClient(),
