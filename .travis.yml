@@ -1,3 +1,5 @@
+sudo: false
+
 language: go
 
 go:
@@ -5,3 +7,6 @@ go:
 
 install:
   - go get github.com/softonic/kubewatch
+
+script:
+  - true
