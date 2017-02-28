@@ -8,6 +8,12 @@ Kubernetes API event watcher.
 go get -u github.com/softonic/kubewatch
 ```
 
+##### Shell completion
+
+```
+eval "$(kubewatch --completion-script-${0#-})"
+```
+
 ##### Help
 
 ```
@@ -24,14 +30,14 @@ Flags:
       --version              Show application version.
 ```
 
-##### Shell completion
+##### Examples:
 
-```
-eval "$(kubewatch --completion-script-${0#-})"
-```
-
-##### Watch for pods evens:
-
+Watch for `pods` events in all `namespaces`:
 ```
 kubewatch --resource pods
+```
+
+Watch for `services` events in namespace `foo`:
+```
+kubewatch --namespace foo --resource services
 ```
