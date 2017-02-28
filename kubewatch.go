@@ -52,7 +52,7 @@ var (
 
 	namespace = app.Flag("namespace",
 		"Set the namespace to be watched.").
-		Default(v1.NamespaceAll).String()
+		Default(v1.NamespaceAll).HintAction(listNamespaces).String()
 )
 
 //-----------------------------------------------------------------------------
@@ -67,6 +67,38 @@ func init() {
 	app.Version("v0.1.0").Author("Marc Villacorta Morera")
 	app.UsageTemplate(usageTemplate)
 	app.HelpFlag.Short('h')
+}
+
+//-----------------------------------------------------------------------------
+// listNamespaces:
+//-----------------------------------------------------------------------------
+
+func listNamespaces() (list []string) {
+
+	// Uses the current context in kubeconfig:
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// Creates the clientset:
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// Get the list of namespace objects:
+	l, err := clientset.Namespaces().List(v1.ListOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// Extract the name of each namespace:
+	for _, v := range l.Items {
+		list = append(list, v.Name)
+	}
+
+	return
 }
 
 //-----------------------------------------------------------------------------
@@ -115,6 +147,9 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	fmt.Println(listNamespaces())
+	os.Exit(0)
 
 	// Watch for resource in namespace:
 	watchlist := cache.NewListWatchFromClient(
