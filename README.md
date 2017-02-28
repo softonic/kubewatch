@@ -2,13 +2,19 @@
 
 Kubernetes API event watcher.
 
+##### Install
+
+```
+go get -u github.com/softonic/kubewatch
+```
+
 ##### Help
 
 ```
-> kubewatch --help       
+kubewatch --help
 usage: kubewatch [<flags>]
 
-Watches Kubernetes resources via its API
+Watches Kubernetes resources via its API.
 
 Flags:
   -h, --help                 Show context-sensitive help (also try --help-long and --help-man).
@@ -27,5 +33,5 @@ eval "$(kubewatch --completion-script-${0#-})"
 ##### Watch for pods evens:
 
 ```
-./kubewatch --resource pods
+kubewatch --resource pods
 ```

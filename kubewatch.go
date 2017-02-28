@@ -34,6 +34,13 @@ var (
 	// Root level command:
 	app = kingpin.New("kubewatch", "Watches Kubernetes resources via its API.")
 
+	// Resources:
+	resources = []string{
+		"configMaps", "endpoints", "events", "limitranges", "namespaces",
+		"persistentvolumeclaims", "persistentvolumes", "pods", "podtemplates",
+		"replicationcontrollers", "resourcequotas", "secrets", "serviceaccounts",
+		"services", "deployments", "horizontalpodautoscalers", "ingresses", "jobs"}
+
 	// Flags:
 	kubeconfig = app.Flag("kubeconfig",
 		"Absolute path to the kubeconfig file.").
@@ -41,7 +48,7 @@ var (
 
 	resource = app.Flag("resource",
 		"Set the resource type to be watched.").
-		Default("services").String()
+		Default("services").Enum(resources...)
 
 	namespace = app.Flag("namespace",
 		"Set the namespace to be watched.").
