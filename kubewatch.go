@@ -1,11 +1,15 @@
 package main
 
+//-----------------------------------------------------------------------------
+// Package factored import statement:
+//-----------------------------------------------------------------------------
+
 import (
 
 	// Stdlib:
 	"encoding/json"
-	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	// Kubernetes:
@@ -16,15 +20,56 @@ import (
 	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
+
+	// Community:
+	"gopkg.in/alecthomas/kingpin.v2"
 )
+
+//-----------------------------------------------------------------------------
+// Setup command and flags:
+//-----------------------------------------------------------------------------
+
+var (
+
+	// Root level command:
+	app = kingpin.New("kubewatch", "Watches Kubernetes resources via its API")
+
+	// Flags:
+	kubeconfig = app.Flag("kubeconfig",
+		"Absolute path to the kubeconfig file.").
+		Default(os.Getenv("HOME") + "/.kube/config").ExistingFile()
+
+	resource = app.Flag("resource",
+		"Set the resource type to be watched.").
+		Default("services").String()
+
+	namespace = app.Flag("namespace",
+		"Set the namespace to be watched.").
+		Default(v1.NamespaceAll).String()
+)
+
+//-----------------------------------------------------------------------------
+// func init() is called after all the variable declarations in the package
+// have evaluated their initializers, and those are evaluated only after all
+// the imported packages have been initialized:
+//-----------------------------------------------------------------------------
+
+func init() {
+
+	// Customize kingpin:
+	app.Version("v0.1.0").Author("Marc Villacorta Morera")
+	app.UsageTemplate(usageTemplate)
+	app.HelpFlag.Short('h')
+}
+
+//-----------------------------------------------------------------------------
+// Entry point:
+//-----------------------------------------------------------------------------
 
 func main() {
 
-	// Handle flags:
-	kubeconfig := flag.String("kubeconfig", "./config", "Absolute path to the kubeconfig file.")
-	resource := flag.String("resource", "services", "Set the resource type to be watched.")
-	namespace := flag.String("namespace", v1.NamespaceAll, "Set the namespace to be watched.")
-	flag.Parse()
+	// Parse command flags:
+	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	// Map resource to runtime object:
 	m := map[string]runtime.Object{
