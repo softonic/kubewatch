@@ -47,26 +47,26 @@ Flags:
 
 Watch for `pods` events in all `namespaces`:
 ```
-kubewatch --resource pods
+kubewatch --resource pods | jq '.'
 ```
 
 Same thing with docker:
 ```
 docker run -it --rm \
 -v ~/.kube/config:/root/.kube/config \
-softonic/kubewatch --resource pods
+softonic/kubewatch --resource pods | jq '.'
 ```
 
 Watch for `services` events in namespace `foo`:
 ```
-kubewatch --namespace foo --resource services
+kubewatch --namespace foo --resource services | jq '.'
 ```
 
 Same thing with docker:
 ```
 docker run -it --rm \
 -v ~/.kube/config:/root/.kube/config \
-softonic/kubewatch --namespace foo --resource services
+softonic/kubewatch --namespace foo --resource services | jq '.'
 ```
 
 ##### In-cluster examples:
