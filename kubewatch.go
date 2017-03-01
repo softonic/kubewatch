@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -44,7 +45,7 @@ var (
 	// Flags:
 	kubeconfig = app.Flag("kubeconfig",
 		"Absolute path to the kubeconfig file.").
-		Default(os.Getenv("HOME") + "/.kube/config").ExistingFile()
+		Default(kubeconfigPath()).ExistingFileOrDir()
 
 	resource = app.Flag("resource",
 		"Set the resource type to be watched.").
@@ -70,13 +71,28 @@ func init() {
 }
 
 //-----------------------------------------------------------------------------
+// kubeconfigPath:
+//-----------------------------------------------------------------------------
+
+func kubeconfigPath() (path string) {
+
+	// Return ~/.kube/config if exists:
+	if _, err := os.Stat(os.Getenv("HOME") + "/.kube/config"); err == nil {
+		return os.Getenv("HOME") + "/.kube/config"
+	}
+
+	// Return '.':
+	return "."
+}
+
+//-----------------------------------------------------------------------------
 // listNamespaces:
 //-----------------------------------------------------------------------------
 
 func listNamespaces() (list []string) {
 
-	// Uses the current context in kubeconfig:
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	// Build the config:
+	config, err := buildConfig(*kubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -136,13 +152,13 @@ func main() {
 		"jobs":                     &v1beta1.Job{},
 	}
 
-	// Uses the current context in kubeconfig:
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	// Build the config:
+	config, err := buildConfig(*kubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	// Creates the clientset:
+	// Create the clientset:
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
@@ -181,4 +197,19 @@ func main() {
 	for {
 		time.Sleep(time.Second)
 	}
+}
+
+//-----------------------------------------------------------------------------
+// buildConfig:
+//-----------------------------------------------------------------------------
+
+func buildConfig(kubeconfig string) (*rest.Config, error) {
+
+	// Use kubeconfig if given...
+	if kubeconfig != "" && kubeconfig != "." {
+		return clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
+
+	// ...otherwise assume in-cluster:
+	return rest.InClusterConfig()
 }
