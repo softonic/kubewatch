@@ -71,53 +71,6 @@ func init() {
 }
 
 //-----------------------------------------------------------------------------
-// kubeconfigPath:
-//-----------------------------------------------------------------------------
-
-func kubeconfigPath() (path string) {
-
-	// Return ~/.kube/config if exists:
-	if _, err := os.Stat(os.Getenv("HOME") + "/.kube/config"); err == nil {
-		return os.Getenv("HOME") + "/.kube/config"
-	}
-
-	// Return '.':
-	return "."
-}
-
-//-----------------------------------------------------------------------------
-// listNamespaces:
-//-----------------------------------------------------------------------------
-
-func listNamespaces() (list []string) {
-
-	// Build the config:
-	config, err := buildConfig(*kubeconfig)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// Creates the clientset:
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// Get the list of namespace objects:
-	l, err := clientset.Namespaces().List(v1.ListOptions{})
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// Extract the name of each namespace:
-	for _, v := range l.Items {
-		list = append(list, v.Name)
-	}
-
-	return
-}
-
-//-----------------------------------------------------------------------------
 // Entry point:
 //-----------------------------------------------------------------------------
 
@@ -200,6 +153,21 @@ func main() {
 }
 
 //-----------------------------------------------------------------------------
+// kubeconfigPath:
+//-----------------------------------------------------------------------------
+
+func kubeconfigPath() (path string) {
+
+	// Return ~/.kube/config if exists...
+	if _, err := os.Stat(os.Getenv("HOME") + "/.kube/config"); err == nil {
+		return os.Getenv("HOME") + "/.kube/config"
+	}
+
+	// ...otherwise return '.':
+	return "."
+}
+
+//-----------------------------------------------------------------------------
 // buildConfig:
 //-----------------------------------------------------------------------------
 
@@ -212,4 +180,36 @@ func buildConfig(kubeconfig string) (*rest.Config, error) {
 
 	// ...otherwise assume in-cluster:
 	return rest.InClusterConfig()
+}
+
+//-----------------------------------------------------------------------------
+// listNamespaces:
+//-----------------------------------------------------------------------------
+
+func listNamespaces() (list []string) {
+
+	// Build the config:
+	config, err := buildConfig(*kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// Create the clientset:
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// Get the list of namespace objects:
+	l, err := clientset.Namespaces().List(v1.ListOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// Extract the name of each namespace:
+	for _, v := range l.Items {
+		list = append(list, v.Name)
+	}
+
+	return
 }
