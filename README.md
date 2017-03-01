@@ -41,7 +41,7 @@ Flags:
       --version              Show application version.
 ```
 
-##### Examples:
+##### Out-of-cluster examples:
 
 Watch for `pods` events in all `namespaces`:
 ```
@@ -65,4 +65,11 @@ Same thing with docker:
 docker run -it --rm \
 -v ~/.kube/config:/root/.kube/config \
 softonic/kubewatch --namespace foo --resource services
+```
+
+##### In-cluster examples:
+
+Run `kubewatch` in the `monitoring` namespace and watch for `pods` in all namespaces:
+```
+kubectl --namespace monitoring run kubewatch --image softonic/kubewatch -- --resource pods
 ```
