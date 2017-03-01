@@ -1,6 +1,6 @@
 # kubewatch
 
-[![Version Widget]][Version] [![License Widget]][License] [![GoReportCard Widget]][GoReportCard] [![Travis Widget]][Travis]
+[![Version Widget]][Version] [![License Widget]][License] [![GoReportCard Widget]][GoReportCard] [![Travis Widget]][Travis] [![DockerHub Widget]][DockerHub]
 
 [Version]: https://github.com/softonic/kubewatch/releases
 [Version Widget]: https://img.shields.io/github/release/softonic/kubewatch.svg?maxAge=60
@@ -10,6 +10,8 @@
 [GoReportCard Widget]: https://goreportcard.com/badge/softonic/kubewatch
 [Travis]: https://travis-ci.org/softonic/kubewatch
 [Travis Widget]: https://travis-ci.org/softonic/kubewatch.svg?branch=master
+[DockerHub]: https://hub.docker.com/r/softonic/kubewatch
+[DockerHub Widget]: https://img.shields.io/docker/pulls/softonic/kubewatch.svg
 
 Kubernetes API event watcher.
 

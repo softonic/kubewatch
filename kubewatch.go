@@ -65,7 +65,7 @@ var (
 func init() {
 
 	// Customize kingpin:
-	app.Version("v0.1.0").Author("Marc Villacorta Morera")
+	app.Version("v0.2.0").Author("Marc Villacorta Morera")
 	app.UsageTemplate(usageTemplate)
 	app.HelpFlag.Short('h')
 }
