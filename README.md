@@ -48,7 +48,21 @@ Watch for `pods` events in all `namespaces`:
 kubewatch --resource pods
 ```
 
+Same thing with docker:
+```
+docker run -it --rm \
+-v ~/.kube/config:/root/.kube/config \
+softonic/kubewatch --resource pods
+```
+
 Watch for `services` events in namespace `foo`:
 ```
 kubewatch --namespace foo --resource services
+```
+
+Same thing with docker:
+```
+docker run -it --rm \
+-v ~/.kube/config:/root/.kube/config \
+softonic/kubewatch --namespace foo --resource services
 ```
