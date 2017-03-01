@@ -129,17 +129,9 @@ func main() {
 		m[*resource],
 		time.Second*0,
 		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				jsn, _ := json.Marshal(obj)
-				fmt.Printf("%s added: %s\n", *resource, jsn)
-			},
-			DeleteFunc: func(obj interface{}) {
-				jsn, _ := json.Marshal(obj)
-				fmt.Printf("%s deleted: %s\n", *resource, jsn)
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				fmt.Printf("%s changed\n", *resource)
-			},
+			AddFunc:    printEvent,
+			UpdateFunc: updateEvent,
+			DeleteFunc: printEvent,
 		},
 	)
 
@@ -150,6 +142,28 @@ func main() {
 	for {
 		time.Sleep(time.Second)
 	}
+}
+
+//-----------------------------------------------------------------------------
+// printEvent:
+//-----------------------------------------------------------------------------
+
+func printEvent(obj interface{}) {
+	fmt.Println(json.Marshal(obj))
+}
+
+//-----------------------------------------------------------------------------
+// updateEvent:
+//-----------------------------------------------------------------------------
+
+func updateEvent(oldObj, newObj interface{}) {
+
+	oldPod := oldObj.(*v1.Pod)
+	newPod := newObj.(*v1.Pod)
+
+	fmt.Printf("%s updated: old: %s/%s new: %s/%s", *resource,
+		oldPod.Namespace, oldPod.Name,
+		newPod.Namespace, newPod.Name)
 }
 
 //-----------------------------------------------------------------------------
