@@ -135,6 +135,7 @@ func main() {
 		},
 	)
 
+	// Start the controller:
 	stop := make(chan struct{})
 	go controller.Run(stop)
 
@@ -149,22 +150,16 @@ func main() {
 //-----------------------------------------------------------------------------
 
 func printEvent(obj interface{}) {
-	fmt.Println(json.Marshal(obj))
+	if jsn, err := json.Marshal(obj); err == nil {
+		fmt.Printf("%s\n", jsn)
+	}
 }
 
 //-----------------------------------------------------------------------------
 // updateEvent:
 //-----------------------------------------------------------------------------
 
-func updateEvent(oldObj, newObj interface{}) {
-
-	oldPod := oldObj.(*v1.Pod)
-	newPod := newObj.(*v1.Pod)
-
-	fmt.Printf("%s updated: old: %s/%s new: %s/%s", *resource,
-		oldPod.Namespace, oldPod.Name,
-		newPod.Namespace, newPod.Name)
-}
+func updateEvent(oldObj, newObj interface{}) {}
 
 //-----------------------------------------------------------------------------
 // kubeconfigPath:
