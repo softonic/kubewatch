@@ -45,17 +45,17 @@ var (
 		"services", "deployments", "horizontalpodautoscalers", "ingresses", "jobs"}
 
 	// Flags:
-	kubeconfig = app.Flag("kubeconfig",
+	flgKubeconfig = app.Flag("kubeconfig",
 		"Absolute path to the kubeconfig file.").
 		Default(kubeconfigPath()).ExistingFileOrDir()
 
-	resource = app.Flag("resource",
-		"Set the resource type to be watched.").
-		Default("services").Enum(resources...)
-
-	namespace = app.Flag("namespace",
+	flgNamespace = app.Flag("namespace",
 		"Set the namespace to be watched.").
 		Default(v1.NamespaceAll).HintAction(listNamespaces).String()
+
+	flgResource = app.Flag("resource",
+		"Set the resource type to be watched.").
+		Required().Enum(resources...)
 )
 
 //-----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	// Build the config:
-	config, err := buildConfig(*kubeconfig)
+	config, err := buildConfig(*flgKubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -123,7 +123,7 @@ func main() {
 	}
 
 	// Watch for the given resource:
-	watchResource(clientset, *resource, *namespace)
+	watchResource(clientset, *flgResource, *flgNamespace)
 
 	// Loop forever:
 	for {
@@ -209,7 +209,7 @@ func buildConfig(kubeconfig string) (*rest.Config, error) {
 func listNamespaces() (list []string) {
 
 	// Build the config:
-	config, err := buildConfig(*kubeconfig)
+	config, err := buildConfig(*flgKubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
