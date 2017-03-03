@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/client-go/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
@@ -118,26 +119,24 @@ func main() {
 	}
 
 	// Watch for resource in namespace:
-	watchlist := cache.NewListWatchFromClient(
+	listWatch := cache.NewListWatchFromClient(
 		clientset.Core().RESTClient(),
 		*resource, *namespace,
 		fields.Everything())
 
 	// Controller providing event notifications:
 	_, controller := cache.NewInformer(
-		watchlist,
+		listWatch,
 		m[*resource],
 		time.Second*0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    printEvent,
-			UpdateFunc: updateEvent,
 			DeleteFunc: printEvent,
 		},
 	)
 
 	// Start the controller:
-	stop := make(chan struct{})
-	go controller.Run(stop)
+	go controller.Run(wait.NeverStop)
 
 	// Loop forever:
 	for {
@@ -154,12 +153,6 @@ func printEvent(obj interface{}) {
 		fmt.Printf("%s\n", jsn)
 	}
 }
-
-//-----------------------------------------------------------------------------
-// updateEvent:
-//-----------------------------------------------------------------------------
-
-func updateEvent(oldObj, newObj interface{}) {}
 
 //-----------------------------------------------------------------------------
 // kubeconfigPath:
