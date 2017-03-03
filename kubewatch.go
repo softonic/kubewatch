@@ -59,6 +59,35 @@ var (
 )
 
 //-----------------------------------------------------------------------------
+// Map resources to runtime objects:
+//-----------------------------------------------------------------------------
+
+var resourceObject = map[string]runtime.Object{
+
+	// v1:
+	"configMaps":             &v1.ConfigMap{},
+	"endpoints":              &v1.Endpoints{},
+	"events":                 &v1.Event{},
+	"limitranges":            &v1.LimitRange{},
+	"namespaces":             &v1.Namespace{},
+	"persistentvolumeclaims": &v1.PersistentVolumeClaim{},
+	"persistentvolumes":      &v1.PersistentVolume{},
+	"pods":                   &v1.Pod{},
+	"podtemplates":           &v1.PodTemplate{},
+	"replicationcontrollers": &v1.ReplicationController{},
+	"resourcequotas":         &v1.ResourceQuota{},
+	"secrets":                &v1.Secret{},
+	"serviceaccounts":        &v1.ServiceAccount{},
+	"services":               &v1.Service{},
+
+	// v1beta1:
+	"deployments":              &v1beta1.Deployment{},
+	"horizontalpodautoscalers": &v1beta1.HorizontalPodAutoscaler{},
+	"ingresses":                &v1beta1.Ingress{},
+	"jobs":                     &v1beta1.Job{},
+}
+
+//-----------------------------------------------------------------------------
 // func init() is called after all the variable declarations in the package
 // have evaluated their initializers, and those are evaluated only after all
 // the imported packages have been initialized:
@@ -81,32 +110,6 @@ func main() {
 	// Parse command flags:
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
-	// Map resource to runtime object:
-	m := map[string]runtime.Object{
-
-		// v1:
-		"configMaps":             &v1.ConfigMap{},
-		"endpoints":              &v1.Endpoints{},
-		"events":                 &v1.Event{},
-		"limitranges":            &v1.LimitRange{},
-		"namespaces":             &v1.Namespace{},
-		"persistentvolumeclaims": &v1.PersistentVolumeClaim{},
-		"persistentvolumes":      &v1.PersistentVolume{},
-		"pods":                   &v1.Pod{},
-		"podtemplates":           &v1.PodTemplate{},
-		"replicationcontrollers": &v1.ReplicationController{},
-		"resourcequotas":         &v1.ResourceQuota{},
-		"secrets":                &v1.Secret{},
-		"serviceaccounts":        &v1.ServiceAccount{},
-		"services":               &v1.Service{},
-
-		// v1beta1:
-		"deployments":              &v1beta1.Deployment{},
-		"horizontalpodautoscalers": &v1beta1.HorizontalPodAutoscaler{},
-		"ingresses":                &v1beta1.Ingress{},
-		"jobs":                     &v1beta1.Job{},
-	}
-
 	// Build the config:
 	config, err := buildConfig(*kubeconfig)
 	if err != nil {
@@ -119,24 +122,37 @@ func main() {
 		panic(err.Error())
 	}
 
+	// Watch for the given resource:
+	watchResource(clientset, *resource, *namespace)
+
+	// Loop forever:
+	for {
+		time.Sleep(time.Second)
+	}
+}
+
+//-----------------------------------------------------------------------------
+// watchResource:
+//-----------------------------------------------------------------------------
+
+func watchResource(clientset *kubernetes.Clientset, resource, namespace string) {
+
 	// Watch for resource in namespace:
 	listWatch := cache.NewListWatchFromClient(
 		clientset.Core().RESTClient(),
-		*resource, *namespace,
+		resource, namespace,
 		fields.Everything())
 
-	// Ugly hack to supress sync events:
+	// Ugly hack to suppress sync events:
 	listWatch.ListFunc = func(options api.ListOptions) (runtime.Object, error) {
 		return clientset.Core().RESTClient().Get().Namespace("none").
-			Resource(*resource).Do().Get()
+			Resource(resource).Do().Get()
 	}
 
 	// Controller providing event notifications:
 	_, controller := cache.NewInformer(
-		listWatch,
-		m[*resource],
-		time.Second*0,
-		cache.ResourceEventHandlerFuncs{
+		listWatch, resourceObject[resource],
+		time.Second*0, cache.ResourceEventHandlerFuncs{
 			AddFunc:    printEvent,
 			DeleteFunc: printEvent,
 		},
@@ -144,11 +160,6 @@ func main() {
 
 	// Start the controller:
 	go controller.Run(wait.NeverStop)
-
-	// Loop forever:
-	for {
-		time.Sleep(time.Second)
-	}
 }
 
 //-----------------------------------------------------------------------------
