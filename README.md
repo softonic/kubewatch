@@ -31,47 +31,49 @@ eval "$(kubewatch --completion-script-${0#-})"
 
 ```
 kubewatch --help
-usage: kubewatch [<flags>]
+usage: kubewatch [<flags>] <resources>...
 
 Watches Kubernetes resources via its API.
 
 Flags:
-  -h, --help                 Show context-sensitive help (also try --help-long and --help-man).
-      --kubeconfig           Absolute path to the kubeconfig file.
-      --resource="services"  Set the resource type to be watched.
-      --namespace=""         Set the namespace to be watched.
-      --version              Show application version.
+  -h, --help          Show context-sensitive help (also try --help-long and --help-man).
+      --kubeconfig    Absolute path to the kubeconfig file.
+      --namespace     Set the namespace to be watched.
+      --version       Show application version.
+
+Args:
+  <resources>  Space delimited list of resources to be watched.
 ```
 
 ##### Out-of-cluster examples:
 
-Watch for `pods` events in all `namespaces`:
+Watch for `pods` and `events` in all `namespaces`:
 ```
-kubewatch --resource pods | jq '.'
+kubewatch pods events | jq '.'
 ```
 
 Same thing with docker:
 ```
 docker run -it --rm \
 -v ~/.kube/config:/root/.kube/config \
-softonic/kubewatch --resource pods | jq '.'
+softonic/kubewatch pods events | jq '.'
 ```
 
 Watch for `services` events in namespace `foo`:
 ```
-kubewatch --namespace foo --resource services | jq '.'
+kubewatch --namespace foo services | jq '.'
 ```
 
 Same thing with docker:
 ```
 docker run -it --rm \
 -v ~/.kube/config:/root/.kube/config \
-softonic/kubewatch --namespace foo --resource services | jq '.'
+softonic/kubewatch --namespace foo services | jq '.'
 ```
 
 ##### In-cluster examples:
 
 Run `kubewatch` in the `monitoring` namespace and watch for `pods` in all namespaces:
 ```
-kubectl --namespace monitoring run kubewatch --image softonic/kubewatch -- --resource pods
+kubectl --namespace monitoring run kubewatch --image softonic/kubewatch -- pods
 ```

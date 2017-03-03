@@ -53,9 +53,10 @@ var (
 		"Set the namespace to be watched.").
 		Default(v1.NamespaceAll).HintAction(listNamespaces).String()
 
-	flgResource = app.Flag("resource",
-		"Set the resource type to be watched.").
-		Required().Enum(resources...)
+	// Arguments:
+	argResources = app.Arg("resources",
+		"Space delimited list of resources to be watched.").
+		Required().HintOptions(resources...).Enums(resources...)
 )
 
 //-----------------------------------------------------------------------------
@@ -96,7 +97,7 @@ var resourceObject = map[string]runtime.Object{
 func init() {
 
 	// Customize kingpin:
-	app.Version("v0.2.1").Author("Marc Villacorta Morera")
+	app.Version("v0.2.2").Author("Marc Villacorta Morera")
 	app.UsageTemplate(usageTemplate)
 	app.HelpFlag.Short('h')
 }
@@ -123,7 +124,9 @@ func main() {
 	}
 
 	// Watch for the given resource:
-	watchResource(clientset, *flgResource, *flgNamespace)
+	for _, resource := range *argResources {
+		watchResource(clientset, resource, *flgNamespace)
+	}
 
 	// Loop forever:
 	for {
