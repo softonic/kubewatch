@@ -96,7 +96,7 @@ var resourceObject = map[string]runtime.Object{
 func init() {
 
 	// Customize kingpin:
-	app.Version("v0.2.0").Author("Marc Villacorta Morera")
+	app.Version("v0.2.1").Author("Marc Villacorta Morera")
 	app.UsageTemplate(usageTemplate)
 	app.HelpFlag.Short('h')
 }
