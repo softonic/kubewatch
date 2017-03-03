@@ -14,6 +14,7 @@ import (
 
 	// Kubernetes:
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/pkg/fields"
@@ -123,6 +124,12 @@ func main() {
 		clientset.Core().RESTClient(),
 		*resource, *namespace,
 		fields.Everything())
+
+	// Ugly hack to supress sync events:
+	listWatch.ListFunc = func(options api.ListOptions) (runtime.Object, error) {
+		return clientset.Core().RESTClient().Get().Namespace("none").
+			Resource(*resource).Do().Get()
+	}
 
 	// Controller providing event notifications:
 	_, controller := cache.NewInformer(
