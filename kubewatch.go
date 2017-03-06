@@ -29,7 +29,7 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// Setup command and flags:
+// Command, flags and arguments:
 //-----------------------------------------------------------------------------
 
 var (
@@ -60,32 +60,41 @@ var (
 )
 
 //-----------------------------------------------------------------------------
+// Type structs:
+//-----------------------------------------------------------------------------
+
+type verObj struct {
+	apiVersion    string
+	runtimeObject runtime.Object
+}
+
+//-----------------------------------------------------------------------------
 // Map resources to runtime objects:
 //-----------------------------------------------------------------------------
 
-var resourceObject = map[string]runtime.Object{
+var resourceObject = map[string]verObj{
 
 	// v1:
-	"configMaps":             &v1.ConfigMap{},
-	"endpoints":              &v1.Endpoints{},
-	"events":                 &v1.Event{},
-	"limitranges":            &v1.LimitRange{},
-	"namespaces":             &v1.Namespace{},
-	"persistentvolumeclaims": &v1.PersistentVolumeClaim{},
-	"persistentvolumes":      &v1.PersistentVolume{},
-	"pods":                   &v1.Pod{},
-	"podtemplates":           &v1.PodTemplate{},
-	"replicationcontrollers": &v1.ReplicationController{},
-	"resourcequotas":         &v1.ResourceQuota{},
-	"secrets":                &v1.Secret{},
-	"serviceaccounts":        &v1.ServiceAccount{},
-	"services":               &v1.Service{},
+	"configMaps":             verObj{"v1", &v1.ConfigMap{}},
+	"endpoints":              verObj{"v1", &v1.Endpoints{}},
+	"events":                 verObj{"v1", &v1.Event{}},
+	"limitranges":            verObj{"v1", &v1.LimitRange{}},
+	"namespaces":             verObj{"v1", &v1.Namespace{}},
+	"persistentvolumeclaims": verObj{"v1", &v1.PersistentVolumeClaim{}},
+	"persistentvolumes":      verObj{"v1", &v1.PersistentVolume{}},
+	"pods":                   verObj{"v1", &v1.Pod{}},
+	"podtemplates":           verObj{"v1", &v1.PodTemplate{}},
+	"replicationcontrollers": verObj{"v1", &v1.ReplicationController{}},
+	"resourcequotas":         verObj{"v1", &v1.ResourceQuota{}},
+	"secrets":                verObj{"v1", &v1.Secret{}},
+	"serviceaccounts":        verObj{"v1", &v1.ServiceAccount{}},
+	"services":               verObj{"v1", &v1.Service{}},
 
 	// v1beta1:
-	"deployments":              &v1beta1.Deployment{},
-	"horizontalpodautoscalers": &v1beta1.HorizontalPodAutoscaler{},
-	"ingresses":                &v1beta1.Ingress{},
-	"jobs":                     &v1beta1.Job{},
+	"deployments":              verObj{"v1beta1", &v1beta1.Deployment{}},
+	"horizontalpodautoscalers": verObj{"v1beta1", &v1beta1.HorizontalPodAutoscaler{}},
+	"ingresses":                verObj{"v1beta1", &v1beta1.Ingress{}},
+	"jobs":                     verObj{"v1beta1", &v1beta1.Job{}},
 }
 
 //-----------------------------------------------------------------------------
@@ -140,21 +149,29 @@ func main() {
 
 func watchResource(clientset *kubernetes.Clientset, resource, namespace string) {
 
+	var client rest.Interface
+
+	// Set the API endpoint:
+	switch resourceObject[resource].apiVersion {
+	case "v1":
+		client = clientset.Core().RESTClient()
+	case "v1beta1":
+		client = clientset.Extensions().RESTClient()
+	}
+
 	// Watch for resource in namespace:
 	listWatch := cache.NewListWatchFromClient(
-		clientset.Core().RESTClient(),
-		resource, namespace,
+		client, resource, namespace,
 		fields.Everything())
 
 	// Ugly hack to suppress sync events:
 	listWatch.ListFunc = func(options api.ListOptions) (runtime.Object, error) {
-		return clientset.Core().RESTClient().Get().Namespace("none").
-			Resource(resource).Do().Get()
+		return client.Get().Namespace("none").Resource(resource).Do().Get()
 	}
 
 	// Controller providing event notifications:
 	_, controller := cache.NewInformer(
-		listWatch, resourceObject[resource],
+		listWatch, resourceObject[resource].runtimeObject,
 		time.Second*0, cache.ResourceEventHandlerFuncs{
 			AddFunc:    printEvent,
 			DeleteFunc: printEvent,
