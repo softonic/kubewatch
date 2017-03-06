@@ -191,7 +191,7 @@ func watchResource(clientset *kubernetes.Clientset, resource, namespace string) 
 
 func printEvent(obj interface{}) {
 	if *flgFlatten {
-		flatten(obj)
+		flatten(reflect.ValueOf(obj), "kubewatch")
 	} else if jsn, err := json.Marshal(obj); err == nil {
 		fmt.Printf("%s\n", jsn)
 	}
@@ -263,28 +263,87 @@ func listNamespaces() (list []string) {
 // flatten:
 //-----------------------------------------------------------------------------
 
-func flatten(v interface{}) {
+func flatten(v reflect.Value, prefix string) {
 
-	o := reflect.ValueOf(v)
-	k := o.Kind()
-
-	if k == reflect.Ptr || k == reflect.Interface {
-		o = reflect.Indirect(o)
-		k = o.Kind()
+	// Append '.' to prefix:
+	if prefix != "" {
+		prefix = prefix + "."
 	}
 
-	switch k {
+	// Set the value:
+	if v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+
+	// Set the type:
+	t := v.Type()
+
+	// Flatten each type kind:
+	switch t.Kind() {
 	case reflect.Bool:
-		fmt.Println("Bool")
+		flattenBool(prefix)
 	case reflect.Int:
-		fmt.Println("Int")
+		flattenInt(prefix)
 	case reflect.Map:
-		fmt.Println("Map")
+		flattenMap(prefix)
 	case reflect.Slice:
-		fmt.Println("Slice")
+		flattenSlice(prefix)
 	case reflect.String:
-		fmt.Println("String")
+		flattenString(prefix)
 	case reflect.Struct:
-		fmt.Println("Struct")
+		flattenStruct(t, v, prefix)
+	}
+}
+
+//-----------------------------------------------------------------------------
+// flattenBool:
+//-----------------------------------------------------------------------------
+
+func flattenBool(prefix string) {
+	fmt.Println("Bool: " + prefix)
+}
+
+//-----------------------------------------------------------------------------
+// flattenInt:
+//-----------------------------------------------------------------------------
+
+func flattenInt(prefix string) {
+	fmt.Println("Int: " + prefix)
+}
+
+//-----------------------------------------------------------------------------
+// flattenMap:
+//-----------------------------------------------------------------------------
+
+func flattenMap(prefix string) {
+	fmt.Println("Map: " + prefix)
+}
+
+//-----------------------------------------------------------------------------
+// flattenSlice:
+//-----------------------------------------------------------------------------
+
+func flattenSlice(prefix string) {
+	fmt.Println("Slice: " + prefix)
+}
+
+//-----------------------------------------------------------------------------
+// flattenString:
+//-----------------------------------------------------------------------------
+
+func flattenString(prefix string) {
+	fmt.Println("String: " + prefix)
+}
+
+//-----------------------------------------------------------------------------
+// flattenStruct:
+//-----------------------------------------------------------------------------
+
+func flattenStruct(t reflect.Type, v reflect.Value, prefix string) {
+	fmt.Println("Struct: " + prefix)
+	for i := 0; i < v.NumField(); i++ {
+		childValue := v.Field(i)
+		childKey := t.Field(i).Name
+		flatten(childValue.Addr(), prefix+childKey)
 	}
 }
