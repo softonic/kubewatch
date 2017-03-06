@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"time"
 
 	// Kubernetes:
@@ -52,6 +53,9 @@ var (
 	flgNamespace = app.Flag("namespace",
 		"Set the namespace to be watched.").
 		Default(v1.NamespaceAll).HintAction(listNamespaces).String()
+
+	flgFlatten = app.Flag("flatten",
+		"Whether to produce flatten JSON output or not.").Bool()
 
 	// Arguments:
 	argResources = app.Arg("resources",
@@ -186,7 +190,9 @@ func watchResource(clientset *kubernetes.Clientset, resource, namespace string) 
 //-----------------------------------------------------------------------------
 
 func printEvent(obj interface{}) {
-	if jsn, err := json.Marshal(obj); err == nil {
+	if *flgFlatten {
+		flatten(obj)
+	} else if jsn, err := json.Marshal(obj); err == nil {
 		fmt.Printf("%s\n", jsn)
 	}
 }
@@ -251,4 +257,34 @@ func listNamespaces() (list []string) {
 	}
 
 	return
+}
+
+//-----------------------------------------------------------------------------
+// flatten:
+//-----------------------------------------------------------------------------
+
+func flatten(v interface{}) {
+
+	o := reflect.ValueOf(v)
+	k := o.Kind()
+
+	if k == reflect.Ptr || k == reflect.Interface {
+		o = reflect.Indirect(o)
+		k = o.Kind()
+	}
+
+	switch k {
+	case reflect.Bool:
+		fmt.Println("Bool")
+	case reflect.Int:
+		fmt.Println("Int")
+	case reflect.Map:
+		fmt.Println("Map")
+	case reflect.Slice:
+		fmt.Println("Slice")
+	case reflect.String:
+		fmt.Println("String")
+	case reflect.Struct:
+		fmt.Println("Struct")
+	}
 }
