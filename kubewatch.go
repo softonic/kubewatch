@@ -39,7 +39,7 @@ var (
 
 	// Resources:
 	resources = []string{
-		"configMaps", "endpoints", "events", "limitranges", "namespaces",
+		"configMaps", "endpoints", "events", "limitranges",
 		"persistentvolumeclaims", "persistentvolumes", "pods", "podtemplates",
 		"replicationcontrollers", "resourcequotas", "secrets", "serviceaccounts",
 		"services", "deployments", "horizontalpodautoscalers", "ingresses", "jobs"}
@@ -79,7 +79,6 @@ var resourceObject = map[string]verObj{
 	"endpoints":              verObj{"v1", &v1.Endpoints{}},
 	"events":                 verObj{"v1", &v1.Event{}},
 	"limitranges":            verObj{"v1", &v1.LimitRange{}},
-	"namespaces":             verObj{"v1", &v1.Namespace{}},
 	"persistentvolumeclaims": verObj{"v1", &v1.PersistentVolumeClaim{}},
 	"persistentvolumes":      verObj{"v1", &v1.PersistentVolume{}},
 	"pods":                   verObj{"v1", &v1.Pod{}},
@@ -106,7 +105,7 @@ var resourceObject = map[string]verObj{
 func init() {
 
 	// Customize kingpin:
-	app.Version("v0.3.0").Author("Marc Villacorta Morera")
+	app.Version("v0.3.1").Author("Marc Villacorta Morera")
 	app.UsageTemplate(usageTemplate)
 	app.HelpFlag.Short('h')
 }
