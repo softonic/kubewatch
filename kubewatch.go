@@ -73,7 +73,7 @@ type verObj struct {
 	runtimeObject runtime.Object
 }
 
-type result map[string]string
+type result map[string]interface{}
 
 //-----------------------------------------------------------------------------
 // Map resources to runtime objects:
@@ -202,19 +202,44 @@ func watchResource(clientset *kubernetes.Clientset, resource, namespace string) 
 
 func printEvent(obj interface{}) {
 
-	// Flatten JSON:
+	// Variables:
+	var jsn []byte
+	var err error
+
+	// Marshal obj into JSON:
+	if jsn, err = json.Marshal(obj); err != nil {
+		log.Error("Ops! Cannot marshal JSON")
+		return
+	}
+
+	log.Infof("jsn: %s\n", jsn)
+
 	if *flgFlatten {
+
+		// Unmarshal JSON into dat:
+		var dat map[string]interface{}
+		if err = json.Unmarshal(jsn, &dat); err != nil {
+			log.Error("Ops! Cannot unmarshal JSON")
+			return
+		}
+
+		log.Info("dat: ", dat)
+
+		// Flatten dat into r:
 		r := result{}
-		flatten(r, "kubewatch", reflect.ValueOf(obj))
-		if jsn, err := json.Marshal(r); err == nil {
-			fmt.Printf("%s\n", jsn)
+		flatten(r, "kubewatch", reflect.ValueOf(dat))
+
+		log.Info("res: ", r)
+
+		// Marshal r into JSON:
+		if jsn, err = json.Marshal(r); err == nil {
+			log.Error("Ops! Cannot marshal JSON")
+			return
 		}
 	}
 
-	// Non-flatten JSON:
-	if jsn, err := json.Marshal(obj); err == nil {
-		fmt.Printf("%s\n", jsn)
-	}
+	// Print to stdout:
+	fmt.Printf("%s\n", jsn)
 }
 
 //-----------------------------------------------------------------------------
@@ -299,52 +324,55 @@ func flatten(r result, p string, v reflect.Value) {
 		v = v.Elem()
 	}
 
+	// Return if !valid:
+	if !v.IsValid() {
+		return
+	}
+
 	// Set the type:
 	t := v.Type()
 
 	// Flatten each type kind:
 	switch t.Kind() {
-	case reflect.Bool:
-		flattenBool(v, p, r)
-	case reflect.Int:
-		flattenInt(v, p, r)
+	case reflect.Float64:
+		log.Info("Float64: " + p)
+		flattenFloat64(v, p, r)
 	case reflect.Map:
-		flattenMap(p)
+		log.Info("Map: " + p)
+		flattenMap(v, p, r)
 	case reflect.Slice:
+		log.Info("Slice: " + p)
 		flattenSlice(p)
 	case reflect.String:
+		log.Info("String: " + p)
 		flattenString(v, p, r)
-	case reflect.Struct:
-		flattenStruct(t, v, p, r)
+	default:
+		log.Info("Unknown: " + p)
 	}
 }
 
 //-----------------------------------------------------------------------------
-// flattenBool:
+// flattenFloat64:
 //-----------------------------------------------------------------------------
 
-func flattenBool(v reflect.Value, p string, r result) {
-	if v.Bool() {
-		r[p[:len(p)-1]] = "true"
-	} else {
-		r[p[:len(p)-1]] = "false"
-	}
-}
-
-//-----------------------------------------------------------------------------
-// flattenInt:
-//-----------------------------------------------------------------------------
-
-func flattenInt(v reflect.Value, p string, r result) {
-	r[p[:len(p)-1]] = fmt.Sprintf("%d", v.Int())
+func flattenFloat64(v reflect.Value, p string, r result) {
+	r[p[:len(p)-1]] = fmt.Sprintf("%f", v.Float())
 }
 
 //-----------------------------------------------------------------------------
 // flattenMap:
 //-----------------------------------------------------------------------------
 
-func flattenMap(prefix string) {
-	//fmt.Println("Map: " + prefix)
+func flattenMap(v reflect.Value, p string, r result) {
+	for _, k := range v.MapKeys() {
+		if k.Kind() == reflect.Interface {
+			k = k.Elem()
+		}
+		if k.Kind() != reflect.String {
+			log.Errorf("%s: map key is not string: %s", p, k)
+		}
+		flatten(r, p+k.String(), v.MapIndex(k))
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -361,16 +389,4 @@ func flattenSlice(prefix string) {
 
 func flattenString(v reflect.Value, p string, r result) {
 	r[p[:len(p)-1]] = v.String()
-}
-
-//-----------------------------------------------------------------------------
-// flattenStruct:
-//-----------------------------------------------------------------------------
-
-func flattenStruct(t reflect.Type, v reflect.Value, p string, r result) {
-	for i := 0; i < v.NumField(); i++ {
-		childValue := v.Field(i)
-		childKey := t.Field(i).Name
-		flatten(r, p+childKey, childValue.Addr())
-	}
 }
