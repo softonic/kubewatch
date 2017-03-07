@@ -342,7 +342,7 @@ func flatten(r result, p string, v reflect.Value) {
 		flattenMap(v, p, r)
 	case reflect.Slice:
 		log.Info("Slice: " + p)
-		flattenSlice(p)
+		flattenSlice(v, p, r)
 	case reflect.String:
 		log.Info("String: " + p)
 		flattenString(v, p, r)
@@ -379,8 +379,11 @@ func flattenMap(v reflect.Value, p string, r result) {
 // flattenSlice:
 //-----------------------------------------------------------------------------
 
-func flattenSlice(prefix string) {
-	//fmt.Println("Slice: " + prefix)
+func flattenSlice(v reflect.Value, p string, r result) {
+	r[p+"#"] = fmt.Sprintf("%d", v.Len())
+	for i := 0; i < v.Len(); i++ {
+		flatten(r, fmt.Sprintf("%s%d", p, i), v.Index(i))
+	}
 }
 
 //-----------------------------------------------------------------------------
