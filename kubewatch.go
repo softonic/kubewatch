@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	// Community:
+	log "github.com/Sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -114,6 +115,11 @@ func init() {
 	app.Version("v0.3.2").Author("Marc Villacorta Morera")
 	app.UsageTemplate(usageTemplate)
 	app.HelpFlag.Short('h')
+
+	// Customize the default logger:
+	log.SetFormatter(&log.TextFormatter{ForceColors: true})
+	log.SetOutput(os.Stderr)
+	log.SetLevel(log.InfoLevel)
 }
 
 //-----------------------------------------------------------------------------
@@ -183,6 +189,9 @@ func watchResource(clientset *kubernetes.Clientset, resource, namespace string) 
 		},
 	)
 
+	// Log this watch:
+	log.WithField("type", resource).Info("Watching for new resources")
+
 	// Start the controller:
 	go controller.Run(wait.NeverStop)
 }
@@ -231,10 +240,14 @@ func buildConfig(kubeconfig string) (*rest.Config, error) {
 
 	// Use kubeconfig if given...
 	if kubeconfig != "" && kubeconfig != "." {
+
+		// Log and return:
+		log.WithField("file", kubeconfig).Info("Running out-of-cluster using kubeconfig")
 		return clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
 
 	// ...otherwise assume in-cluster:
+	log.Info("Running in-cluster using environment variables")
 	return rest.InClusterConfig()
 }
 
