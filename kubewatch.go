@@ -73,7 +73,7 @@ type verObj struct {
 	runtimeObject runtime.Object
 }
 
-type result map[string]interface{}
+type strIfce map[string]interface{}
 
 //-----------------------------------------------------------------------------
 // Map resources to runtime objects:
@@ -212,27 +212,21 @@ func printEvent(obj interface{}) {
 		return
 	}
 
-	log.Infof("jsn: %s\n", jsn)
-
 	if *flgFlatten {
 
 		// Unmarshal JSON into dat:
-		var dat map[string]interface{}
+		dat := strIfce{}
 		if err = json.Unmarshal(jsn, &dat); err != nil {
 			log.Error("Ops! Cannot unmarshal JSON")
 			return
 		}
 
-		log.Info("dat: ", dat)
-
 		// Flatten dat into r:
-		r := result{}
+		r := strIfce{}
 		flatten(r, "kubewatch", reflect.ValueOf(dat))
 
-		log.Info("res: ", r)
-
 		// Marshal r into JSON:
-		if jsn, err = json.Marshal(r); err == nil {
+		if jsn, err = json.Marshal(r); err != nil {
 			log.Error("Ops! Cannot marshal JSON")
 			return
 		}
@@ -312,7 +306,7 @@ func listNamespaces() (list []string) {
 // flatten:
 //-----------------------------------------------------------------------------
 
-func flatten(r result, p string, v reflect.Value) {
+func flatten(r strIfce, p string, v reflect.Value) {
 
 	// Append '.' to prefix:
 	if p != "" {
@@ -334,20 +328,30 @@ func flatten(r result, p string, v reflect.Value) {
 
 	// Flatten each type kind:
 	switch t.Kind() {
+	case reflect.Bool:
+		flattenBool(v, p, r)
 	case reflect.Float64:
-		log.Info("Float64: " + p)
 		flattenFloat64(v, p, r)
 	case reflect.Map:
-		log.Info("Map: " + p)
 		flattenMap(v, p, r)
 	case reflect.Slice:
-		log.Info("Slice: " + p)
 		flattenSlice(v, p, r)
 	case reflect.String:
-		log.Info("String: " + p)
 		flattenString(v, p, r)
 	default:
-		log.Info("Unknown: " + p)
+		log.Error("Unknown: " + p)
+	}
+}
+
+//-----------------------------------------------------------------------------
+// flattenBool:
+//-----------------------------------------------------------------------------
+
+func flattenBool(v reflect.Value, p string, r strIfce) {
+	if v.Bool() {
+		r[p[:len(p)-1]] = "true"
+	} else {
+		r[p[:len(p)-1]] = "false"
 	}
 }
 
@@ -355,7 +359,7 @@ func flatten(r result, p string, v reflect.Value) {
 // flattenFloat64:
 //-----------------------------------------------------------------------------
 
-func flattenFloat64(v reflect.Value, p string, r result) {
+func flattenFloat64(v reflect.Value, p string, r strIfce) {
 	r[p[:len(p)-1]] = fmt.Sprintf("%f", v.Float())
 }
 
@@ -363,7 +367,7 @@ func flattenFloat64(v reflect.Value, p string, r result) {
 // flattenMap:
 //-----------------------------------------------------------------------------
 
-func flattenMap(v reflect.Value, p string, r result) {
+func flattenMap(v reflect.Value, p string, r strIfce) {
 	for _, k := range v.MapKeys() {
 		if k.Kind() == reflect.Interface {
 			k = k.Elem()
@@ -379,7 +383,7 @@ func flattenMap(v reflect.Value, p string, r result) {
 // flattenSlice:
 //-----------------------------------------------------------------------------
 
-func flattenSlice(v reflect.Value, p string, r result) {
+func flattenSlice(v reflect.Value, p string, r strIfce) {
 	r[p+"#"] = fmt.Sprintf("%d", v.Len())
 	for i := 0; i < v.Len(); i++ {
 		flatten(r, fmt.Sprintf("%s%d", p, i), v.Index(i))
@@ -390,6 +394,6 @@ func flattenSlice(v reflect.Value, p string, r result) {
 // flattenString:
 //-----------------------------------------------------------------------------
 
-func flattenString(v reflect.Value, p string, r result) {
+func flattenString(v reflect.Value, p string, r strIfce) {
 	r[p[:len(p)-1]] = v.String()
 }
