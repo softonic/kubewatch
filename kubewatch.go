@@ -82,25 +82,25 @@ type strIfce map[string]interface{}
 var resourceObject = map[string]verObj{
 
 	// v1:
-	"configMaps":             verObj{"v1", &v1.ConfigMap{}},
-	"endpoints":              verObj{"v1", &v1.Endpoints{}},
-	"events":                 verObj{"v1", &v1.Event{}},
-	"limitranges":            verObj{"v1", &v1.LimitRange{}},
-	"persistentvolumeclaims": verObj{"v1", &v1.PersistentVolumeClaim{}},
-	"persistentvolumes":      verObj{"v1", &v1.PersistentVolume{}},
-	"pods":                   verObj{"v1", &v1.Pod{}},
-	"podtemplates":           verObj{"v1", &v1.PodTemplate{}},
-	"replicationcontrollers": verObj{"v1", &v1.ReplicationController{}},
-	"resourcequotas":         verObj{"v1", &v1.ResourceQuota{}},
-	"secrets":                verObj{"v1", &v1.Secret{}},
-	"serviceaccounts":        verObj{"v1", &v1.ServiceAccount{}},
-	"services":               verObj{"v1", &v1.Service{}},
+	"configMaps":             {"v1", &v1.ConfigMap{}},
+	"endpoints":              {"v1", &v1.Endpoints{}},
+	"events":                 {"v1", &v1.Event{}},
+	"limitranges":            {"v1", &v1.LimitRange{}},
+	"persistentvolumeclaims": {"v1", &v1.PersistentVolumeClaim{}},
+	"persistentvolumes":      {"v1", &v1.PersistentVolume{}},
+	"pods":                   {"v1", &v1.Pod{}},
+	"podtemplates":           {"v1", &v1.PodTemplate{}},
+	"replicationcontrollers": {"v1", &v1.ReplicationController{}},
+	"resourcequotas":         {"v1", &v1.ResourceQuota{}},
+	"secrets":                {"v1", &v1.Secret{}},
+	"serviceaccounts":        {"v1", &v1.ServiceAccount{}},
+	"services":               {"v1", &v1.Service{}},
 
 	// v1beta1:
-	"deployments":              verObj{"v1beta1", &v1beta1.Deployment{}},
-	"horizontalpodautoscalers": verObj{"v1beta1", &v1beta1.HorizontalPodAutoscaler{}},
-	"ingresses":                verObj{"v1beta1", &v1beta1.Ingress{}},
-	"jobs":                     verObj{"v1beta1", &v1beta1.Job{}},
+	"deployments":              {"v1beta1", &v1beta1.Deployment{}},
+	"horizontalpodautoscalers": {"v1beta1", &v1beta1.HorizontalPodAutoscaler{}},
+	"ingresses":                {"v1beta1", &v1beta1.Ingress{}},
+	"jobs":                     {"v1beta1", &v1beta1.Job{}},
 }
 
 //-----------------------------------------------------------------------------
