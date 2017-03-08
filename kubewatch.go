@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"time"
 
 	// Kubernetes:
@@ -54,6 +55,9 @@ var (
 		"Set the namespace to be watched.").
 		Default(v1.NamespaceAll).HintAction(listNamespaces).String()
 
+	flgFlatten = app.Flag("flatten",
+		"Whether to produce flatten JSON output or not.").Bool()
+
 	// Arguments:
 	argResources = app.Arg("resources",
 		"Space delimited list of resources to be watched.").
@@ -61,13 +65,15 @@ var (
 )
 
 //-----------------------------------------------------------------------------
-// Type structs:
+// Types and structs:
 //-----------------------------------------------------------------------------
 
 type verObj struct {
 	apiVersion    string
 	runtimeObject runtime.Object
 }
+
+type strIfce map[string]interface{}
 
 //-----------------------------------------------------------------------------
 // Map resources to runtime objects:
@@ -106,7 +112,7 @@ var resourceObject = map[string]verObj{
 func init() {
 
 	// Customize kingpin:
-	app.Version("v0.3.1").Author("Marc Villacorta Morera")
+	app.Version("v0.3.2").Author("Marc Villacorta Morera")
 	app.UsageTemplate(usageTemplate)
 	app.HelpFlag.Short('h')
 
@@ -195,9 +201,39 @@ func watchResource(clientset *kubernetes.Clientset, resource, namespace string) 
 //-----------------------------------------------------------------------------
 
 func printEvent(obj interface{}) {
-	if jsn, err := json.Marshal(obj); err == nil {
-		fmt.Printf("%s\n", jsn)
+
+	// Variables:
+	var jsn []byte
+	var err error
+
+	// Marshal obj into JSON:
+	if jsn, err = json.Marshal(obj); err != nil {
+		log.Error("Ops! Cannot marshal JSON")
+		return
 	}
+
+	if *flgFlatten {
+
+		// Unmarshal JSON into dat:
+		dat := strIfce{}
+		if err = json.Unmarshal(jsn, &dat); err != nil {
+			log.Error("Ops! Cannot unmarshal JSON")
+			return
+		}
+
+		// Flatten dat into r:
+		r := strIfce{}
+		flatten(r, "kubewatch", reflect.ValueOf(dat))
+
+		// Marshal r into JSON:
+		if jsn, err = json.Marshal(r); err != nil {
+			log.Error("Ops! Cannot marshal JSON")
+			return
+		}
+	}
+
+	// Print to stdout:
+	fmt.Printf("%s\n", jsn)
 }
 
 //-----------------------------------------------------------------------------
@@ -264,4 +300,100 @@ func listNamespaces() (list []string) {
 	}
 
 	return
+}
+
+//-----------------------------------------------------------------------------
+// flatten:
+//-----------------------------------------------------------------------------
+
+func flatten(r strIfce, p string, v reflect.Value) {
+
+	// Append '.' to prefix:
+	if p != "" {
+		p = p + "."
+	}
+
+	// Set the value:
+	if v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+
+	// Return if !valid:
+	if !v.IsValid() {
+		return
+	}
+
+	// Set the type:
+	t := v.Type()
+
+	// Flatten each type kind:
+	switch t.Kind() {
+	case reflect.Bool:
+		flattenBool(v, p, r)
+	case reflect.Float64:
+		flattenFloat64(v, p, r)
+	case reflect.Map:
+		flattenMap(v, p, r)
+	case reflect.Slice:
+		flattenSlice(v, p, r)
+	case reflect.String:
+		flattenString(v, p, r)
+	default:
+		log.Error("Unknown: " + p)
+	}
+}
+
+//-----------------------------------------------------------------------------
+// flattenBool:
+//-----------------------------------------------------------------------------
+
+func flattenBool(v reflect.Value, p string, r strIfce) {
+	if v.Bool() {
+		r[p[:len(p)-1]] = "true"
+	} else {
+		r[p[:len(p)-1]] = "false"
+	}
+}
+
+//-----------------------------------------------------------------------------
+// flattenFloat64:
+//-----------------------------------------------------------------------------
+
+func flattenFloat64(v reflect.Value, p string, r strIfce) {
+	r[p[:len(p)-1]] = fmt.Sprintf("%f", v.Float())
+}
+
+//-----------------------------------------------------------------------------
+// flattenMap:
+//-----------------------------------------------------------------------------
+
+func flattenMap(v reflect.Value, p string, r strIfce) {
+	for _, k := range v.MapKeys() {
+		if k.Kind() == reflect.Interface {
+			k = k.Elem()
+		}
+		if k.Kind() != reflect.String {
+			log.Errorf("%s: map key is not string: %s", p, k)
+		}
+		flatten(r, p+k.String(), v.MapIndex(k))
+	}
+}
+
+//-----------------------------------------------------------------------------
+// flattenSlice:
+//-----------------------------------------------------------------------------
+
+func flattenSlice(v reflect.Value, p string, r strIfce) {
+	r[p+"#"] = fmt.Sprintf("%d", v.Len())
+	for i := 0; i < v.Len(); i++ {
+		flatten(r, fmt.Sprintf("%s%d", p, i), v.Index(i))
+	}
+}
+
+//-----------------------------------------------------------------------------
+// flattenString:
+//-----------------------------------------------------------------------------
+
+func flattenString(v reflect.Value, p string, r strIfce) {
+	r[p[:len(p)-1]] = v.String()
 }
