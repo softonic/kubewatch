@@ -39,6 +39,7 @@ Flags:
   -h, --help          Show context-sensitive help (also try --help-long and --help-man).
       --kubeconfig    Absolute path to the kubeconfig file.
       --namespace     Set the namespace to be watched.
+      --flatten       Whether to produce flatten JSON output or not.
       --version       Show application version.
 
 Args:
