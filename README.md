@@ -78,7 +78,9 @@ Run `kubewatch` in the `monitoring` namespace and watch for `pods` in all namesp
 kubectl --namespace monitoring run kubewatch --image softonic/kubewatch -- pods
 ```
 
-Run `kubewatch` in the `monitoring` namespace and watch for `pods`, `deployments` and `events` in all namespaces. Also flatten the `json` output:
+Run `kubewatch` in the `monitoring` namespace and watch for `pods`, `deployments` and `events` objects in all namespaces. Also flatten the `json` output:
 ```
-kubectl --namespace monitoring run kubewatch --image softonic/kubewatch -- --flatten pods deployments events
+kubectl --namespace monitoring \
+run kubewatch --image softonic/kubewatch \
+-- --flatten pods deployments events
 ```
