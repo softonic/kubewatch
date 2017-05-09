@@ -308,9 +308,9 @@ func listNamespaces() (list []string) {
 
 func flatten(r strIfce, p string, v reflect.Value) {
 
-	// Append '.' to prefix:
+	// Append '_' to prefix:
 	if p != "" {
-		p = p + "."
+		p = p + "_"
 	}
 
 	// Set the value:
