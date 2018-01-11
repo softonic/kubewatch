@@ -148,10 +148,8 @@ func main() {
 		watchResource(clientset, resource, *flgNamespace)
 	}
 
-	// Loop forever:
-	for {
-		time.Sleep(time.Second)
-	}
+	// Block forever:
+	select {}
 }
 
 //-----------------------------------------------------------------------------
