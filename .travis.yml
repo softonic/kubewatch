@@ -3,10 +3,12 @@ sudo: false
 language: go
 
 go:
-  - 1.8
-
-install:
-  - go get github.com/softonic/kubewatch
+  - 1.11
 
 script:
   - true
+
+env:
+  - GO111MODULE=on
+
+install: true
