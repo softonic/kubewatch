@@ -10,3 +10,6 @@ install:
 
 script:
   - true
+
+env:
+  - GO111MODULE=on
