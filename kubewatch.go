@@ -12,22 +12,26 @@ import (
 	"os"
 	"reflect"
 	"time"
+    "flag"
 
 	// Kubernetes:
+	apps "k8s.io/api/apps/v1"
+	autoscaling "k8s.io/api/autoscaling/v1"
+	batch "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
+	extensions "k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
-	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/pkg/fields"
-	"k8s.io/client-go/pkg/runtime"
-	"k8s.io/client-go/pkg/util/wait"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 
 	// Community:
-	log "github.com/Sirupsen/logrus"
-	"gopkg.in/alecthomas/kingpin.v2"
+	log "github.com/sirupsen/logrus"
 )
 
 //-----------------------------------------------------------------------------
@@ -36,32 +40,25 @@ import (
 
 var (
 
-	// Root level command:
-	app = kingpin.New("kubewatch", "Watches Kubernetes resources via its API.")
-
 	// Resources:
 	resources = []string{
-		"configMaps", "endpoints", "events", "limitranges",
+		"configMaps", "endpoints", "events", "limitranges", "replicasets",
 		"persistentvolumeclaims", "persistentvolumes", "pods", "podtemplates",
 		"replicationcontrollers", "resourcequotas", "secrets", "serviceaccounts",
-		"services", "deployments", "horizontalpodautoscalers", "ingresses", "jobs"}
+		"services", "deployments", "nodes", "horizontalpodautoscalers", "damonsets", "statefulsets", "ingresses", "jobs"}
 
-	// Flags:
-	flgKubeconfig = app.Flag("kubeconfig",
-		"Absolute path to the kubeconfig file.").
-		Default(kubeconfigPath()).ExistingFileOrDir()
+    flgKubeconfig = flag.String("config", kubeconfigPath(), "a string")
+    
+    flgNamespace = flag.String("namespace", "default", "a string")
 
-	flgNamespace = app.Flag("namespace",
-		"Set the namespace to be watched.").
-		Default(v1.NamespaceAll).HintAction(listNamespaces).String()
+    flgAllNamespaces = flag.Bool("allnamespaces", false, "a bool") 
 
-	flgFlatten = app.Flag("flatten",
-		"Whether to produce flatten JSON output or not.").Bool()
+    flgFlatten = flag.Bool("flatten", true, "a bool")
 
-	// Arguments:
-	argResources = app.Arg("resources",
-		"Space delimited list of resources to be watched.").
-		Required().HintOptions(resources...).Enums(resources...)
+    argResources = flag.Args()
+ 
+    namespacestring = "default"
+
 )
 
 //-----------------------------------------------------------------------------
@@ -95,12 +92,20 @@ var resourceObject = map[string]verObj{
 	"secrets":                {"v1", &v1.Secret{}},
 	"serviceaccounts":        {"v1", &v1.ServiceAccount{}},
 	"services":               {"v1", &v1.Service{}},
+	"nodes":                  {"v1", &v1.Node{}},
 
-	// v1beta1:
-	"deployments":              {"v1beta1", &v1beta1.Deployment{}},
-	"horizontalpodautoscalers": {"v1beta1", &v1beta1.HorizontalPodAutoscaler{}},
-	"ingresses":                {"v1beta1", &v1beta1.Ingress{}},
-	"jobs":                     {"v1beta1", &v1beta1.Job{}},
+	// apps :
+	"deployments":  {"apps", &apps.Deployment{}},
+	"statefulsets": {"apps", &apps.StatefulSet{}},
+	"daemonsets":   {"apps", &apps.DaemonSet{}},
+
+	// autoscaling :
+	"horizontalpodautoscalers": {"autoscaling", &autoscaling.HorizontalPodAutoscaler{}},
+
+	// v1beta1 :
+	"ingresses":   {"v1beta1", &extensions.Ingress{}},
+	"replicasets": {"v1beta1", &extensions.Ingress{}},
+	"jobs":        {"batch", &batch.Job{}},
 }
 
 //-----------------------------------------------------------------------------
@@ -110,11 +115,6 @@ var resourceObject = map[string]verObj{
 //-----------------------------------------------------------------------------
 
 func init() {
-
-	// Customize kingpin:
-	app.Version("v0.3.2").Author("Marc Villacorta Morera")
-	app.UsageTemplate(usageTemplate)
-	app.HelpFlag.Short('h')
 
 	// Customize the default logger:
 	log.SetFormatter(&log.TextFormatter{ForceColors: true})
@@ -128,8 +128,7 @@ func init() {
 
 func main() {
 
-	// Parse command flags:
-	kingpin.MustParse(app.Parse(os.Args[1:]))
+    flag.Parse()
 
 	// Build the config:
 	config, err := buildConfig(*flgKubeconfig)
@@ -143,9 +142,10 @@ func main() {
 		panic(err.Error())
 	}
 
+
 	// Watch for the given resource:
-	for _, resource := range *argResources {
-		watchResource(clientset, resource, *flgNamespace)
+	for _, resource := range flag.Args() {
+		watchResource(clientset, resource, *flgNamespace, *flgAllNamespaces)
 	}
 
 	// Block forever:
@@ -156,29 +156,44 @@ func main() {
 // watchResource:
 //-----------------------------------------------------------------------------
 
-func watchResource(clientset *kubernetes.Clientset, resource, namespace string) {
+func watchResource(clientset *kubernetes.Clientset, resource string, namespace string, all bool) {
 
 	var client rest.Interface
+
+    var definition string
 
 	// Set the API endpoint:
 	switch resourceObject[resource].apiVersion {
 	case "v1":
-		client = clientset.Core().RESTClient()
+		client = clientset.CoreV1().RESTClient()
 	case "v1beta1":
-		client = clientset.Extensions().RESTClient()
+		client = clientset.ExtensionsV1beta1().RESTClient()
+	case "apps":
+		client = clientset.AppsV1().RESTClient()
+	case "autoscaling":
+		client = clientset.AutoscalingV1().RESTClient()
+	case "batch":
+		client = clientset.BatchV1().RESTClient()
 	}
 
-	// Watch for resource in namespace:
-	listWatch := cache.NewListWatchFromClient(
-		client, resource, namespace,
-		fields.Everything())
+    switch all{
+    case true:
+        definition = ""
+    case false:
+        definition = namespace
+    }
+
+    listWatch := cache.NewListWatchFromClient(
+            client, resource, definition,
+            fields.Everything())
 
 	// Ugly hack to suppress sync events:
-	listWatch.ListFunc = func(options api.ListOptions) (runtime.Object, error) {
+	listWatch.ListFunc = func(options metav1.ListOptions) (runtime.Object, error) {
 		return client.Get().Namespace("none").Resource(resource).Do().Get()
 	}
 
 	// Controller providing event notifications:
+
 	_, controller := cache.NewInformer(
 		listWatch, resourceObject[resource].runtimeObject,
 		time.Second*0, cache.ResourceEventHandlerFuncs{
@@ -210,7 +225,7 @@ func printEvent(obj interface{}) {
 		return
 	}
 
-	if *flgFlatten {
+	if *flgFlatten == true {
 
 		// Unmarshal JSON into dat:
 		dat := strIfce{}
@@ -275,10 +290,10 @@ func buildConfig(kubeconfig string) (*rest.Config, error) {
 func listNamespaces() (list []string) {
 
 	// Build the config:
-	config, err := buildConfig(*flgKubeconfig)
-	if err != nil {
-		panic(err.Error())
-	}
+    config, err := buildConfig(*flgKubeconfig)
+    if err != nil {
+        panic(err.Error())
+    }
 
 	// Create the clientset:
 	clientset, err := kubernetes.NewForConfig(config)
@@ -287,7 +302,7 @@ func listNamespaces() (list []string) {
 	}
 
 	// Get the list of namespace objects:
-	l, err := clientset.Namespaces().List(v1.ListOptions{})
+	l, err := clientset.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
