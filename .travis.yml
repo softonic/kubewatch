@@ -5,11 +5,10 @@ language: go
 go:
   - 1.11
 
-install:
-  - go get github.com/softonic/kubewatch
-
 script:
   - true
 
 env:
   - GO111MODULE=on
+
+install: true
