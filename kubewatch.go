@@ -8,11 +8,11 @@ import (
 
 	// Stdlib:
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"reflect"
 	"time"
-    "flag"
 
 	// Kubernetes:
 	apps "k8s.io/api/apps/v1"
@@ -47,18 +47,17 @@ var (
 		"replicationcontrollers", "resourcequotas", "secrets", "serviceaccounts",
 		"services", "deployments", "nodes", "horizontalpodautoscalers", "damonsets", "statefulsets", "ingresses", "jobs"}
 
-    flgKubeconfig = flag.String("config", kubeconfigPath(), "a string")
-    
-    flgNamespace = flag.String("namespace", "default", "a string")
+	flgKubeconfig = flag.String("config", kubeconfigPath(), "a string")
 
-    flgAllNamespaces = flag.Bool("allnamespaces", false, "a bool") 
+	flgNamespace = flag.String("namespace", "default", "a string")
 
-    flgFlatten = flag.Bool("flatten", true, "a bool")
+	flgAllNamespaces = flag.Bool("allnamespaces", false, "a bool")
 
-    argResources = flag.Args()
- 
-    namespacestring = "default"
+	flgFlatten = flag.Bool("flatten", true, "a bool")
 
+	argResources = flag.Args()
+
+	namespacestring = "default"
 )
 
 //-----------------------------------------------------------------------------
@@ -128,7 +127,7 @@ func init() {
 
 func main() {
 
-    flag.Parse()
+	flag.Parse()
 
 	// Build the config:
 	config, err := buildConfig(*flgKubeconfig)
@@ -141,7 +140,6 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-
 
 	// Watch for the given resource:
 	for _, resource := range flag.Args() {
@@ -160,7 +158,7 @@ func watchResource(clientset *kubernetes.Clientset, resource string, namespace s
 
 	var client rest.Interface
 
-    var definition string
+	var definition string
 
 	// Set the API endpoint:
 	switch resourceObject[resource].apiVersion {
@@ -176,16 +174,16 @@ func watchResource(clientset *kubernetes.Clientset, resource string, namespace s
 		client = clientset.BatchV1().RESTClient()
 	}
 
-    switch all{
-    case true:
-        definition = ""
-    case false:
-        definition = namespace
-    }
+	switch all {
+	case true:
+		definition = ""
+	case false:
+		definition = namespace
+	}
 
-    listWatch := cache.NewListWatchFromClient(
-            client, resource, definition,
-            fields.Everything())
+	listWatch := cache.NewListWatchFromClient(
+		client, resource, definition,
+		fields.Everything())
 
 	// Ugly hack to suppress sync events:
 	listWatch.ListFunc = func(options metav1.ListOptions) (runtime.Object, error) {
@@ -290,10 +288,10 @@ func buildConfig(kubeconfig string) (*rest.Config, error) {
 func listNamespaces() (list []string) {
 
 	// Build the config:
-    config, err := buildConfig(*flgKubeconfig)
-    if err != nil {
-        panic(err.Error())
-    }
+	config, err := buildConfig(*flgKubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	// Create the clientset:
 	clientset, err := kubernetes.NewForConfig(config)
